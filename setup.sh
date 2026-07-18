@@ -306,11 +306,18 @@ EOF
     systemctl restart caddy
     sleep 5
 
+    echo ">>> Настройка firewall (безопасно для серверов с уже работающими сервисами)"
+    if ufw status | grep -q "Status: active"; then
+        echo "UFW уже включён. Добавляю только необходимые правила..."
+    else
+        echo "UFW ещё не включён. Включаю с базовыми правилами..."
+        ufw --force enable
+    fi
     ufw allow 22/tcp
     ufw allow 80/tcp
     ufw allow 443/tcp
-    ufw --force enable
     ufw delete allow 4533/tcp || true
+    ufw status verbose
 
     echo ">>> Проверка HTTPS"
     for i in 1 2 3 4 5 6; do
@@ -322,9 +329,16 @@ EOF
     done
 
 else
+    echo ">>> Настройка firewall (безопасно для серверов с уже работающими сервисами)"
+    if ufw status | grep -q "Status: active"; then
+        echo "UFW уже включён. Добавляю только необходимые правила..."
+    else
+        echo "UFW ещё не включён. Включаю с базовыми правилами..."
+        ufw --force enable
+    fi
     ufw allow 22/tcp
     ufw allow 4533/tcp
-    ufw --force enable
+    ufw status verbose
     echo ">>> Доступ по HTTP: http://$(curl -s ifconfig.me):4533"
 fi
 
