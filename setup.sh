@@ -1,3 +1,4 @@
+cat > setup.sh << 'SCRIPT_END'
 #!/bin/bash
 set -e
 
@@ -105,7 +106,7 @@ rclone lsd cloudmusic: || {
 }
 
 echo ">>> Точка монтирования"
-mkdir -p /mnt/musiccloud
+mkdir -p /mnt/music
 mkdir -p /var/cache/rclone
 
 if command -v fusermount3 >/dev/null 2>&1; then
@@ -123,7 +124,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sleep 5
-ExecStart=/usr/bin/rclone mount "cloudmusic:$CLOUD_FOLDER" /mnt/musiccloud \\
+ExecStart=/usr/bin/rclone mount "cloudmusic:$CLOUD_FOLDER" /mnt/music \\
   --config=/root/.config/rclone/rclone.conf \\
   --allow-other \\
   --vfs-cache-mode full \\
@@ -140,7 +141,7 @@ ExecStart=/usr/bin/rclone mount "cloudmusic:$CLOUD_FOLDER" /mnt/musiccloud \\
   --log-file=/var/log/rclone.log \\
   --log-level INFO \\
   --umask 002
-ExecStop=$FUSERMOUNT_BIN -u /mnt/musiccloud
+ExecStop=$FUSERMOUNT_BIN -u /mnt/music
 Restart=on-failure
 RestartSec=10
 User=root
@@ -153,14 +154,14 @@ systemctl daemon-reload
 systemctl enable --now rclone-music.service
 
 timeout 30 bash -c '
-until mountpoint -q /mnt/musiccloud
+until mountpoint -q /mnt/music
 do
     sleep 1
 done
 ' || echo "ВНИМАНИЕ: mount не подтвердился за 30 секунд, проверьте: systemctl status rclone-music"
 
 systemctl is-active --quiet rclone-music.service && echo "rclone-music: активен"
-ls /mnt/musiccloud | head || true
+ls /mnt/music | head || true
 
 echo ">>> Ротация лога rclone (лог именно этого приложения)"
 cat > /etc/logrotate.d/rclone << 'EOF'
@@ -233,7 +234,7 @@ else
 fi
 
 cat > /opt/navidrome/navidrome.toml << EOF
-MusicFolder = "/mnt/musiccloud"
+MusicFolder = "/mnt/music"
 DataFolder = "/var/lib/navidrome"
 Port = 4533
 Address = "0.0.0.0"
@@ -331,3 +332,4 @@ fi
 echo
 echo "=== ГОТОВО ==="
 echo "Откройте адрес выше в браузере для создания администратора Navidrome"
+SCRIPT_END
