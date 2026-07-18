@@ -1,4 +1,3 @@
-cat > setup.sh << 'SCRIPT_END'
 #!/bin/bash
 set -e
 
@@ -332,4 +331,3 @@ fi
 echo
 echo "=== ГОТОВО ==="
 echo "Откройте адрес выше в браузере для создания администратора Navidrome"
-SCRIPT_END
