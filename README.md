@@ -6,6 +6,10 @@
 
 Скрипт полностью настраивает сервер "с нуля" и позволяет получить собственный музыкальный стриминговый сервис за несколько минут.
 
+This installer is an unofficial installation script and is not affiliated with the Navidrome, rclone, Caddy or FFmpeg projects.
+
+Этот установщик является неофициальным проектом и не связан с разработчиками Navidrome, rclone, Caddy или FFmpeg.
+
 ---
 
 ## Возможности
@@ -177,3 +181,18 @@ HTTPS использует сертификаты Let's Encrypt.
 ## Лицензия
 
 MIT License
+
+## Credits / Благодарности
+
+This project would not be possible without these amazing open-source projects:
+
+Этот проект был бы невозможен без следующих проектов с открытым исходным кодом:
+
+- Navidrome — https://github.com/navidrome/navidrome
+- rclone — https://github.com/rclone/rclone
+- Caddy — https://github.com/caddyserver/caddy
+- FFmpeg — https://ffmpeg.org/
+
+Special thanks to all developers and contributors of these projects.
+
+Особая благодарность всем разработчикам и участникам этих проектов.
