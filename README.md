@@ -1,4 +1,6 @@
-# Cloud Music Server Installer
+# 🎵 Cloud Music Server Installer
+
+> One-command installer for Navidrome + Cloud Storage + HTTPS
 
 Автоматическая установка **Navidrome** с музыкальной библиотекой, расположенной в облачном хранилище.
 
