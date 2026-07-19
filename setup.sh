@@ -45,18 +45,34 @@ esac
 read -p "Максимальный размер кэша rclone в ГБ [1]: " CACHE_SIZE_GB
 CACHE_SIZE_GB=${CACHE_SIZE_GB:-1}
 
-read -p "Как часто пересканировать библиотеку — 12h или 24h [24h]: " SCAN_SCHEDULE
-SCAN_SCHEDULE=${SCAN_SCHEDULE:-24h}
+# Время сброса кэша каталогов rclone (UTC)
+read -p "Во сколько сбрасывать кэш списка файлов rclone (часы:минуты UTC) [05:00]: " CACHE_REFRESH_TIME
+CACHE_REFRESH_TIME=${CACHE_REFRESH_TIME:-05:00}
+CACHE_REFRESH_HOUR=$(echo "$CACHE_REFRESH_TIME" | cut -d: -f1 | sed 's/^0*//')
+CACHE_REFRESH_MIN=$(echo "$CACHE_REFRESH_TIME" | cut -d: -f2 | sed 's/^0*//')
+CACHE_REFRESH_HOUR=${CACHE_REFRESH_HOUR:-0}
+CACHE_REFRESH_MIN=${CACHE_REFRESH_MIN:-0}
+
+# Время ежедневного сканирования библиотеки Navidrome (UTC) — ставим позже сброса кэша,
+# чтобы Navidrome гарантированно видел уже обновлённый список файлов
+read -p "Во сколько сканировать библиотеку Navidrome (часы:минуты UTC) [05:30]: " SCAN_TIME
+SCAN_TIME=${SCAN_TIME:-05:30}
+SCAN_HOUR=$(echo "$SCAN_TIME" | cut -d: -f1 | sed 's/^0*//')
+SCAN_MIN=$(echo "$SCAN_TIME" | cut -d: -f2 | sed 's/^0*//')
+SCAN_HOUR=${SCAN_HOUR:-0}
+SCAN_MIN=${SCAN_MIN:-0}
+SCAN_SCHEDULE_CRON="$SCAN_MIN $SCAN_HOUR * * *"
 
 echo
 echo "=================== ПРОВЕРЬТЕ ДАННЫЕ ==================="
-echo "Домен:            ${DOMAIN:-не используется (HTTP по IP:4533)}"
-echo "DuckDNS:          $([ "$USE_DUCKDNS" = "1" ] && echo да || echo нет)"
-echo "Облако:           $CLOUD_TYPE"
-echo "Логин:            $CLOUD_USER"
-echo "Папка в облаке:   $CLOUD_FOLDER"
-echo "Кэш rclone:       ${CACHE_SIZE_GB}G"
-echo "Пересканирование: каждые $SCAN_SCHEDULE"
+echo "Домен:               ${DOMAIN:-не используется (HTTP по IP:4533)}"
+echo "DuckDNS:              $([ "$USE_DUCKDNS" = "1" ] && echo да || echo нет)"
+echo "Облако:               $CLOUD_TYPE"
+echo "Логин:                $CLOUD_USER"
+echo "Папка в облаке:       $CLOUD_FOLDER"
+echo "Кэш rclone:           ${CACHE_SIZE_GB}G"
+echo "Сброс кэша файлов:    ежедневно в $CACHE_REFRESH_TIME UTC"
+echo "Скан библиотеки:      ежедневно в $SCAN_TIME UTC"
 echo "==========================================================="
 read -p "Продолжить установку? (y/n): " CONFIRM
 [ "$CONFIRM" = "y" ] || { echo "Отменено."; exit 1; }
@@ -176,6 +192,17 @@ cat > /etc/logrotate.d/rclone << 'EOF'
 }
 EOF
 
+echo ">>> Автоматический сброс кэша списка файлов rclone (ежедневно)"
+cat > /opt/refresh-music-cache.sh << 'EOF'
+#!/bin/bash
+kill -SIGHUP $(pgrep -f "rclone mount cloudmusic") 2>/dev/null
+EOF
+chmod 700 /opt/refresh-music-cache.sh
+
+cat > /etc/cron.d/refresh-music-cache << EOF
+$CACHE_REFRESH_MIN $CACHE_REFRESH_HOUR * * * root /opt/refresh-music-cache.sh >/dev/null 2>&1
+EOF
+
 echo ">>> Установка Navidrome (с проверками и ретраями)"
 mkdir -p /opt/navidrome /var/lib/navidrome
 cd /opt/navidrome
@@ -237,7 +264,7 @@ MusicFolder = "/mnt/music"
 DataFolder = "/var/lib/navidrome"
 Port = 4533
 Address = "0.0.0.0"
-ScanSchedule = "@every $SCAN_SCHEDULE"
+ScanSchedule = "$SCAN_SCHEDULE_CRON"
 LogLevel = "INFO"
 EnableInsightsCollector = false
 EOF
